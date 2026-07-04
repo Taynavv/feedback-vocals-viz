@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Syntax-check renderer script
+        run: node --check screen.js
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install Python deps
+        run: pip install pytest pyyaml jsonschema
+
+      - uses: actions/checkout@v5
+        with:
+          repository: got-feedback/feedpak-spec
+          ref: v1.14.0
+          path: feedpak-spec
+
+      - name: Run tests
+        env:
+          FEEDPAK_SPEC_DIR: ${{ github.workspace }}/feedpak-spec
+        run: pytest tests/ -v
+
+      - name: Check tag matches plugin.json version
+        run: |
+          python - <<'EOF'
+          import json, os, sys
+          tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          ver = json.load(open("plugin.json"))["version"]
+          if tag != ver:
+              sys.exit(f"tag v{tag} != plugin.json version {ver} — bump plugin.json before tagging")
+          EOF
+
+      - name: Build plugin zip
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p "dist/feedback-vocals-viz/assets" "dist/feedback-vocals-viz/docs"
+          cp plugin.json screen.js routes.py README.md LICENSE \
+             "dist/feedback-vocals-viz/"
+          cp assets/thumb.svg "dist/feedback-vocals-viz/assets/"
+          cp docs/screenshot.png "dist/feedback-vocals-viz/docs/"
+          cd dist
+          zip -r "feedback-vocals-viz-${VERSION}.zip" feedback-vocals-viz
+          unzip -l "feedback-vocals-viz-${VERSION}.zip"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/feedback-vocals-viz-${VERSION}.zip" \
+            --title "feedback-vocals-viz ${GITHUB_REF_NAME}" \
+            --generate-notes

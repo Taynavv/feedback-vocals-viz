@@ -1,0 +1,15 @@
+# never commit song content or generated paks
+*.feedpak
+*.sloppak
+*.mp3
+*.ogg
+test-output/
+
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Claude Code local permission grants — never publishable
+.claude/settings.local.json
