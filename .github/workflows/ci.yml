@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Syntax-check renderer script
+        run: node --check screen.js
+
+      - name: Difficulty estimator unit tests
+        run: node --test tests/difficulty.test.js
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install Python deps
+        run: pip install pytest pyyaml jsonschema
+
+      # Reference validator for the pak e2e test — pinned to the spec version we emit.
+      - uses: actions/checkout@v5
+        with:
+          repository: got-feedback/feedpak-spec
+          ref: v1.14.0
+          path: feedpak-spec
+
+      - name: Run tests
+        env:
+          FEEDPAK_SPEC_DIR: ${{ github.workspace }}/feedpak-spec
+        run: pytest tests/ -v
