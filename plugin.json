@@ -1,0 +1,88 @@
+{
+  "id": "vocals_highway",
+  "name": "Karaoke Highway",
+  "version": "0.4.1",
+  "feedback_target": "0.3.0-alpha.1",
+  "private": false,
+  "type": "visualization",
+  "script": "screen.js",
+  "routes": "routes.py",
+  "category": "practice",
+  "description": "SingStar-style pitch-ribbon highway for Vocals arrangements.",
+  "icon": "assets/thumb.svg",
+  "standards": [
+    "capability-pipelines.v1"
+  ],
+  "capabilities": {
+    "visualization": {
+      "roles": [
+        "provider"
+      ],
+      "operations": [
+        "renderer.create",
+        "renderer.destroy"
+      ],
+      "emits": [
+        "renderer-ready",
+        "renderer-failed"
+      ],
+      "mode": "active",
+      "safety": "safe",
+      "settings": [
+        {
+          "key": "octaveIndependent",
+          "label": "Octave-free pitch match",
+          "type": "toggle",
+          "default": false
+        },
+        {
+          "key": "tolerance",
+          "label": "Pitch tolerance (semitones)",
+          "type": "range",
+          "default": 1,
+          "min": 0.5,
+          "max": 2,
+          "step": 0.25
+        },
+        {
+          "key": "micOffsetMs",
+          "label": "Mic timing offset (ms)",
+          "type": "range",
+          "default": 0,
+          "min": -1000,
+          "max": 1000,
+          "step": 5
+        }
+      ]
+    },
+    "note-detection": {
+      "roles": [
+        "provider"
+      ],
+      "operations": [
+        "pitch.estimate"
+      ],
+      "emits": [
+        "hit",
+        "miss"
+      ],
+      "mode": "active",
+      "safety": "sensitive",
+      "description": "Monophonic vocal pitch estimates from the built-in YIN detector."
+    },
+    "audio-input": {
+      "roles": [
+        "provider",
+        "requester"
+      ],
+      "requests": [
+        "list-sources"
+      ],
+      "mode": "active",
+      "compatibility": "degrade-noop",
+      "ownership": "multi-provider",
+      "safety": "sensitive",
+      "description": "Registers the karaoke microphone as a managed input source and reads the user's selected input."
+    }
+  }
+}
